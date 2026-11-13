@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎯 ROMPE EL MITO – El Gran Reto Universitario</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root {
+      --morado: #563478;
+      --morado-oscuro: #3A1F56;
+      --lila: #A98ACB;
+      --amarillo: #F6C453;
+      --naranja: #EE8952;
+      --verde: #76B58A;
+      --verde-vivo: #2ECC71;
+      --rojo-vivo: #FF4D6D;
+      --rosado: #F4A6B8;
+      --crema: #FFF5E8;
+      --texto: #2D1A42;
+      --sombra-papel: 0 12px 0 rgba(45, 26, 66, 0.22), 0 18px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Rounded Mplus 1c', 'Nunito', 'Quicksand', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 20% 20%, #6D4496 0%, var(--morado) 55%, var(--morado-oscuro) 100%);
+      color: var(--texto);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    .bg-shapes {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .floating-emoji {
+      position: absolute;
+      font-size: clamp(1.8rem, 3vw, 3.2rem);
+      opacity: 0.25;
+      animation: floatEmoji 9s ease-in-out infinite;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+    }
+
+    @keyframes floatEmoji {
+      0%, 100% { transform: translateY(0) rotate(-8deg); }
+      50% { transform: translateY(-30px) rotate(10deg); }
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .top-bar {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 500;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .icon-btn {
+      background: rgba(255, 245, 232, 0.92);
+      border: 3px solid var(--texto);
+      border-radius: 50px;
+      padding: 8px 14px;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--texto);
+      cursor: pointer;
+      box-shadow: 0 4px 0 var(--texto);
+      transition: transform 0.15s, background 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .icon-btn:hover {
+      transform: translateY(-2px);
+      background: var(--amarillo);
+    }
+
+    .icon-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 var(--texto);
+    }
+
+    .status-pill {
+      background: var(--crema);
+      border: 3px solid var(--texto);
+      border-radius: 50px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 0 var(--texto);
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #E67E22;
+      display: inline-block;
+    }
+
+    .dot.online {
+      background: var(--verde-vivo);
+      box-shadow: 0 0 8px var(--verde-vivo);
+    }
+
+    .app-container {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .screen {
+      display: none;
+      width: 100%;
+      max-width: 1200px;
+      animation: popIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.88) translateY(24px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .paper-card {
+      background: var(--crema);
+      border: 4px solid var(--texto);
+      border-radius: 32px;
+      box-shadow: var(--sombra-papel);
+      padding: 32px;
+      position: relative;
+    }
+
+    .badge-pill {
+      display: inline-block;
+      background: var(--amarillo);
+      color: var(--texto);
+      border: 3px solid var(--texto);
+      border-radius: 50px;
+      padding: 8px 22px;
+      font-weight: 900;
+      font-size: 1.05rem;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 0 var(--texto);
+      text-transform: uppercase;
+    }
+
+    .mega-btn {
+      background: linear-gradient(180deg, #FFD466 0%, var(--amarillo) 100%);
+      color: var(--texto);
+      border: 4px solid var(--texto);
+      border-radius: 60px;
+      padding: 18px 40px;
+      font-size: clamp(1.2rem, 2.2vw, 1.65rem);
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 0 var(--texto), 0 15px 25px rgba(0,0,0,0.3);
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      text-transform: uppercase;
+    }
+
+    .mega-btn:hover {
+      transform: translateY(-4px) scale(1.03);
+      filter: brightness(1.04);
+    }
+
+    .mega-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 var(--texto);
+    }
+
+    .mega-btn.green {
+      background: linear-gradient(180deg, #8FD1A4 0%, var(--verde) 100%);
+    }
+
+    .mega-btn.orange {
+      background: linear-gradient(180deg, #FFA270 0%, var(--naranja) 100%);
+    }
+
+    .pulse-anim {
+      animation: pulseBtn 2s infinite;
+    }
+
+    @keyframes pulseBtn {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 28px;
+      width: 100%;
+      max-width: 820px;
+      margin-top: 28px;
+    }
+
+    .role-card {
+      background: var(--crema);
+      border: 4px solid var(--texto);
+      border-radius: 30px;
+      padding: 32px 24px;
+      text-align: center;
+      box-shadow: var(--sombra-papel);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .role-card:hover {
+      transform: translateY(-8px) rotate(-1deg);
+    }
+
+    .hero-title {
+      font-size: clamp(2.8rem, 6vw, 5.2rem);
+      font-weight: 900;
+      color: var(--amarillo);
+      text-shadow: 4px 4px 0 var(--texto), 0 10px 25px rgba(0,0,0,0.4);
+      line-height: 1.05;
+      text-align: center;
+      margin: 14px 0;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(1.2rem, 2.3vw, 1.85rem);
+      font-weight: 800;
+      color: var(--crema);
+      background: var(--naranja);
+      border: 4px solid var(--texto);
+      border-radius: 50px;
+      padding: 10px 28px;
+      box-shadow: 0 6px 0 var(--texto);
+      transform: rotate(-1.5deg);
+      margin-bottom: 18px;
+      text-align: center;
+    }
+
+    .welcome-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 0.9fr;
+      gap: 24px;
+      width: 100%;
+      margin: 18px 0 26px;
+      align-items: center;
+    }
+
+    @media (max-width: 860px) {
+      .welcome-grid { grid-template-columns: 1fr; }
+    }
+
+    .illustration-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: linear-gradient(135deg, #FFF5E8 0%, #F4E6FF 100%);
+    }
+
+    .emoji-stage {
+      font-size: clamp(3.5rem, 6vw, 5.2rem);
+      display: flex;
+      gap: 16px;
+      margin-bottom: 14px;
+      animation: bounceStage 2.5s ease-in-out infinite;
+    }
+
+    @keyframes bounceStage {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .qr-box {
+      background: #FFFFFF;
+      border: 4px solid var(--texto);
+      border-radius: 26px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: var(--sombra-papel);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #qrcode {
+      padding: 10px;
+      background: white;
+      border-radius: 14px;
+      border: 2px dashed var(--lila);
+    }
+
+    .options-showcase {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      width: 100%;
+      margin: 20px 0;
+    }
+
+    @media (max-width: 760px) {
+      .options-showcase { grid-template-columns: 1fr; }
+    }
+
+    .opt-card {
+      border: 4px solid var(--texto);
+      border-radius: 26px;
+      padding: 22px 18px;
+      text-align: center;
+      box-shadow: var(--sombra-papel);
+      transition: transform 0.2s;
+    }
+
+    .opt-card:hover { transform: translateY(-6px); }
+    .opt-card.v { background: #B8F2C8; }
+    .opt-card.f { background: #FFB8C6; }
+    .opt-card.d { background: #FFE399; }
+
+    .steps-strip {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      width: 100%;
+      margin: 14px 0 24px;
+    }
+
+    @media (max-width: 850px) {
+      .steps-strip { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .step-item {
+      background: var(--crema);
+      border: 3px solid var(--texto);
+      border-radius: 20px;
+      padding: 14px 10px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 0.98rem;
+      box-shadow: 0 6px 0 var(--texto);
+    }
+
+    .contest-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .question-card {
+      width: 100%;
+      background: var(--crema);
+      border: 5px solid var(--texto);
+      border-radius: 36px;
+      padding: 34px 28px;
+      text-align: center;
+      box-shadow: var(--sombra-papel);
+      position: relative;
+      animation: cardFlipIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes cardFlipIn {
+      0% { opacity: 0; transform: rotateY(-25deg) scale(0.85); }
+      100% { opacity: 1; transform: rotateY(0) scale(1); }
+    }
+
+    .q-emoji {
+      font-size: clamp(3.5rem, 6vw, 5.2rem);
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .q-text {
+      font-size: clamp(1.65rem, 3.3vw, 2.75rem);
+      font-weight: 900;
+      color: var(--texto);
+      line-height: 1.2;
+    }
+
+    .contest-lower {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 24px;
+      width: 100%;
+      margin-top: 22px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 880px) {
+      .contest-lower { grid-template-columns: 1fr; }
+    }
+
+    .timer-box {
+      background: var(--crema);
+      border: 4px solid var(--texto);
+      border-radius: 30px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--sombra-papel);
+    }
+
+    .timer-ring-wrap {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      margin: 10px 0;
+    }
+
+    .timer-svg {
+      transform: rotate(-90deg);
+      width: 150px;
+      height: 150px;
+    }
+
+    .timer-bg {
+      fill: none;
+      stroke: #E4D7F5;
+      stroke-width: 14;
+    }
+
+    .timer-progress {
+      fill: none;
+      stroke: var(--verde-vivo);
+      stroke-width: 14;
+      stroke-linecap: round;
+      stroke-dasharray: 408;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.25s linear, stroke 0.3s;
+    }
+
+    .timer-number {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.2rem;
+      font-weight: 900;
+      color: var(--texto);
+    }
+
+    .timer-controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .ctrl-btn {
+      background: #FFF;
+      border: 3px solid var(--texto);
+      border-radius: 16px;
+      padding: 8px 14px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      cursor: pointer;
+      box-shadow: 0 4px 0 var(--texto);
+    }
+
+    .ctrl-btn:hover { background: var(--amarillo); }
+    .ctrl-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--texto); }
+
+    .time-up-banner {
+      display: none;
+      background: var(--rojo-vivo);
+      color: white;
+      border: 4px solid var(--texto);
+      border-radius: 20px;
+      padding: 12px 20px;
+      font-weight: 900;
+      font-size: 1.2rem;
+      text-align: center;
+      margin-top: 12px;
+      box-shadow: 0 6px 0 var(--texto);
+      animation: shakeBanner 0.5s ease-in-out;
+    }
+
+    @keyframes shakeBanner {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+
+    .live-votes-box {
+      background: var(--crema);
+      border: 4px solid var(--texto);
+      border-radius: 30px;
+      padding: 22px;
+      box-shadow: var(--sombra-papel);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .bars-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      height: 175px;
+      align-items: end;
+      padding-top: 24px;
+      margin: 10px 0;
+    }
+
+    .bar-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .bar-count {
+      font-weight: 900;
+      font-size: 1.05rem;
+      margin-bottom: 6px;
+    }
+
+    .bar-fill {
+      width: 100%;
+      max-width: 90px;
+      min-height: 14px;
+      border: 3px solid var(--texto);
+      border-radius: 16px 16px 6px 6px;
+      transition: height 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .bar-fill.v { background: var(--verde-vivo); }
+    .bar-fill.f { background: var(--rojo-vivo); }
+    .bar-fill.d { background: var(--amarillo); }
+
+    .bar-label {
+      margin-top: 8px;
+      font-weight: 900;
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    .bars-hidden-overlay {
+      display: none;
+      background: #EFE4FA;
+      border: 3px dashed var(--morado);
+      border-radius: 20px;
+      padding: 36px 16px;
+      text-align: center;
+      font-weight: 800;
+      color: var(--morado);
+      font-size: 1.15rem;
+      margin: 10px 0;
+    }
+
+    .debate-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      width: 100%;
+      margin: 24px 0 30px;
+    }
+
+    @media (max-width: 780px) {
+      .debate-grid { grid-template-columns: 1fr; }
+    }
+
+    .debate-card {
+      background: var(--crema);
+      border: 4px solid var(--texto);
+      border-radius: 28px;
+      padding: 28px 20px;
+      text-align: center;
+      box-shadow: var(--sombra-papel);
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .suspense-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(25, 10, 42, 0.92);
+      z-index: 800;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--amarillo);
+      text-align: center;
+    }
+
+    .suspense-spinner {
+      font-size: 6rem;
+      animation: spinDrum 0.6s linear infinite;
+    }
+
+    @keyframes spinDrum {
+      0% { transform: rotate(0deg) scale(1); }
+      50% { transform: rotate(180deg) scale(1.25); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+
+    .reveal-banner {
+      border: 5px solid var(--texto);
+      border-radius: 34px;
+      padding: 24px 44px;
+      font-size: clamp(2.4rem, 5vw, 4.2rem);
+      font-weight: 900;
+      box-shadow: var(--sombra-papel);
+      margin: 14px 0 22px;
+      text-align: center;
+      animation: flipReveal 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes flipReveal {
+      0% { transform: rotateX(90deg) scale(0.7); opacity: 0; }
+      100% { transform: rotateX(0) scale(1); opacity: 1; }
+    }
+
+    .reveal-banner.false-ans { background: #FF6B86; color: #FFF; text-shadow: 3px 3px 0 var(--texto); }
+    .reveal-banner.true-ans { background: #4CD97B; color: var(--texto); }
+
+    .explain-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 22px;
+      width: 100%;
+      margin-bottom: 26px;
+    }
+
+    @media (max-width: 820px) {
+      .explain-grid { grid-template-columns: 1fr; }
+    }
+
+    .student-shell {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .vote-big-btn {
+      width: 100%;
+      border: 4px solid var(--texto);
+      border-radius: 28px;
+      padding: 24px 20px;
+      font-size: 1.55rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 0 var(--texto);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: transform 0.12s;
+      color: var(--texto);
+    }
+
+    .vote-big-btn:active {
+      transform: translateY(5px);
+      box-shadow: 0 2px 0 var(--texto);
+    }
+
+    .vote-big-btn.v { background: #7CE89E; }
+    .vote-big-btn.f { background: #FF8FA3; }
+    .vote-big-btn.d { background: #FFD666; }
+
+    .vote-big-btn.selected {
+      outline: 6px solid #FFFFFF;
+      transform: scale(1.02);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 10, 35, 0.78);
+      z-index: 900;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal-card {
+      background: var(--crema);
+      border: 4px solid var(--texto);
+      border-radius: 28px;
+      max-width: 720px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 28px;
+      box-shadow: var(--sombra-papel);
+    }
+
+    .q-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: white;
+      border: 2px solid var(--texto);
+      border-radius: 14px;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 12px 14px;
+      border: 3px solid var(--texto);
+      border-radius: 14px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      margin: 6px 0 14px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+  <div class="bg-shapes" id="bg-shapes"></div>
+
+  <div class="top-bar">
+    <div class="status-pill" id="conn-pill" title="Estado de conexión en tiempo real">
+      <span class="dot" id="conn-dot"></span>
+      <span id="conn-text">Modo Local</span>
+    </div>
+    <button class="icon-btn" onclick="openFirebaseModal()" title="Conectar Firebase en tiempo real">🔥</button>
+    <button class="icon-btn" onclick="toggleMute()" id="mute-btn" title="Sonido">🔊</button>
+    <button class="icon-btn" onclick="toggleFullscreen()" title="Pantalla Completa">⛶</button>
+    <button class="icon-btn" id="host-panel-btn" onclick="openHostPanel()" style="display:none;" title="Panel de la Presentadora (Tecla P)">🎛️</button>
+  </div>
+
+  <div class="suspense-overlay" id="suspense-overlay">
+    <div class="suspense-spinner">🥁</div>
+    <h2 style="font-size: 2.6rem; margin-top: 16px;">¿MITO O REALIDAD...?</h2>
+  </div>
+
+  <div class="app-container">
+    <section class="screen active" id="screen-role">
+      <span class="badge-pill">🎓 CAMPAÑA UNIVERSITARIA DE PREVENCIÓN</span>
+      <h1 class="hero-title">🎯 ROMPE EL MITO</h1>
+      <div class="hero-subtitle">«¿Cuánto sabes realmente sobre el alcohol?»</div>
+
+      <div class="role-grid">
+        <div class="role-card" onclick="selectRole('host')">
+          <div style="font-size: 4.5rem; margin-bottom: 10px;">🎤💻</div>
+          <h2 style="font-size: 1.7rem; font-weight: 900; margin-bottom: 8px;">SOY PRESENTADORA</h2>
+          <p style="font-weight: 700; color: #563478; margin-bottom: 20px;">
+            Proyecta el juego en el salón o Zoom, controla el tiempo y mira los votos en vivo.
+          </p>
+          <button class="mega-btn" style="width: 100%; font-size: 1.15rem;">ENTRAR AL ESCENARIO</button>
+        </div>
+
+        <div class="role-card" onclick="selectRole('student')">
+          <div style="font-size: 4.5rem; margin-bottom: 10px;">📱🙋‍♂️</div>
+          <h2 style="font-size: 1.7rem; font-weight: 900; margin-bottom: 8px;">SOY PARTICIPANTE</h2>
+          <p style="font-weight: 700; color: #563478; margin-bottom: 20px;">
+            Vota en tiempo real desde tu celular o laptop en cada ronda del reto.
+          </p>
+          <button class="mega-btn green" style="width: 100%; font-size: 1.15rem;">UNIRME A VOTAR</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-welcome">
+      <span class="badge-pill">🔥 EL GRAN RETO UNIVERSITARIO 🔥</span>
+      <h1 class="hero-title">🎯 ¡ROMPE EL MITO!</h1>
+      <div class="hero-subtitle">«No todo lo que escuchas sobre el alcohol es verdad...»</div>
+
+      <div class="welcome-grid">
+        <div class="paper-card illustration-box">
+          <div class="emoji-stage">
+            <span>🧠</span><span>🔍</span><span>🃏</span><span>❓</span>
+          </div>
+          <h3 style="font-size: 1.65rem; font-weight: 900; margin-bottom: 10px;">
+            ¡Pon a prueba lo que crees saber!
+          </h3>
+          <p style="font-size: 1.15rem; font-weight: 700; color: #4A3267; line-height: 1.45;">
+            10 afirmaciones populares en la vida universitaria. Algunas son ciencia pura y otras son mitos peligrosos. ¿Lograrás descubrir la verdad?
+          </p>
+        </div>
+
+        <div class="qr-box">
+          <span style="font-weight: 900; font-size: 1.1rem; color: var(--morado);">📲 ¡CONÉCTATE PARA VOTAR!</span>
+          <div id="qrcode"></div>
+          <button class="ctrl-btn" onclick="copyStudentLink()" id="copy-link-btn" style="width: 100%; background: var(--amarillo);">
+            📋 COPIAR LINK PARA ALUMNOS
+          </button>
+          <small style="font-weight: 700; color: #666;" id="connected-hint">
+            Comparte el link por Zoom o WhatsApp
+          </small>
+        </div>
+      </div>
+
+      <button class="mega-btn pulse-anim" onclick="goToScreen('screen-howto')">
+        🚀 ¡COMENZAR EL RETO!
+      </button>
+    </section>
+
+    <section class="screen" id="screen-howto">
+      <span class="badge-pill">📖 REGLAS DEL CONCURSO</span>
+      <h2 class="hero-title" style="font-size: clamp(2.2rem, 4.5vw, 3.8rem);">🎮 ¿CÓMO SE JUEGA?</h2>
+
+      <div class="options-showcase">
+        <div class="opt-card v">
+          <div style="font-size: 3.4rem;">🟢</div>
+          <h3 style="font-size: 1.7rem; font-weight: 900; margin: 6px 0;">VERDADERO</h3>
+          <p style="font-weight: 800; font-size: 1.1rem;">«¡Creo que sí es cierto!»</p>
+        </div>
+        <div class="opt-card f">
+          <div style="font-size: 3.4rem;">🔴</div>
+          <h3 style="font-size: 1.7rem; font-weight: 900; margin: 6px 0;">FALSO</h3>
+          <p style="font-weight: 800; font-size: 1.1rem;">«¡Eso es un mito!»</p>
+        </div>
+        <div class="opt-card d">
+          <div style="font-size: 3.4rem;">🟡</div>
+          <h3 style="font-size: 1.7rem; font-weight: 900; margin: 6px 0;">DEPENDE</h3>
+          <p style="font-weight: 800; font-size: 1.1rem;">«¡Necesito pensarlo!»</p>
+        </div>
+      </div>
+
+      <div class="steps-strip">
+        <div class="step-item">1️⃣<br>Lee y escucha la afirmación</div>
+        <div class="step-item">2️⃣<br>Piensa rápido en 10 segundos</div>
+        <div class="step-item">3️⃣<br>Vota en tu celular o levanta la mano</div>
+        <div class="step-item">4️⃣<br>Defiende tu elección en vivo</div>
+        <div class="step-item">5️⃣<br>Descubre la verdad científica</div>
+      </div>
+
+      <button class="mega-btn green pulse-anim" onclick="startContest()">
+        🎲 ¡VAMOS A JUGAR!
+      </button>
+    </section>
+
+    <section class="screen" id="screen-contest">
+      <div class="contest-header">
+        <span class="badge-pill" style="background: var(--crema);">🏆 ROMPE EL MITO</span>
+        <span class="badge-pill" id="round-indicator" style="font-size: 1.25rem;">🔥 RONDA 01 / 10</span>
+        <span class="badge-pill" id="total-votes-badge" style="background: var(--rosado);">👥 0 VOTOS</span>
+      </div>
+
+      <div class="question-card" id="question-card">
+        <span class="q-emoji" id="q-emoji">☕</span>
+        <div class="q-text" id="q-text">«El café o una ducha fría quitan la borrachera».</div>
+      </div>
+
+      <div class="contest-lower">
+        <div class="timer-box">
+          <div style="font-weight: 900; font-size: 1.15rem; color: var(--morado);">
+            ⏳ ¡TIENES 10 SEGUNDOS PARA DECIDIR!
+          </div>
+          <div class="timer-ring-wrap">
+            <svg class="timer-svg" viewBox="0 0 150 150">
+              <circle class="timer-bg" cx="75" cy="75" r="65"></circle>
+              <circle class="timer-progress" id="timer-circle" cx="75" cy="75" r="65"></circle>
+            </svg>
+            <div class="timer-number" id="timer-number">10</div>
+          </div>
+          <div class="timer-controls">
+            <button class="ctrl-btn" onclick="startTimer()">▶️ INICIAR</button>
+            <button class="ctrl-btn" onclick="pauseTimer()">⏸️ PAUSAR</button>
+            <button class="ctrl-btn" onclick="resetTimer()">🔄 REINICIAR</button>
+          </div>
+          <div class="time-up-banner" id="time-up-banner">
+            🚨 ¡TIEMPO! ¡TODOS A SUS POSICIONES!
+          </div>
+        </div>
+
+        <div class="live-votes-box">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="font-weight: 900; font-size: 1.15rem;">📊 VOTOS EN TIEMPO REAL</span>
+            <button class="ctrl-btn" onclick="toggleBarsVisibility()" id="toggle-bars-btn">🙈 Ocultar barras</button>
+          </div>
+
+          <div class="bars-container" id="bars-container">
+            <div class="bar-col">
+              <div class="bar-count" id="count-V">0 (0%)</div>
+              <div class="bar-fill v" id="bar-V" style="height: 14px;"></div>
+              <div class="bar-label">🟢 VERDADERO</div>
+            </div>
+            <div class="bar-col">
+              <div class="bar-count" id="count-F">0 (0%)</div>
+              <div class="bar-fill f" id="bar-F" style="height: 14px;"></div>
+              <div class="bar-label">🔴 FALSO</div>
+            </div>
+            <div class="bar-col">
+              <div class="bar-count" id="count-D">0 (0%)</div>
+              <div class="bar-fill d" id="bar-D" style="height: 14px;"></div>
+              <div class="bar-label">🟡 DEPENDE</div>
+            </div>
+          </div>
+
+          <div class="bars-hidden-overlay" id="bars-hidden-overlay">
+            🔒 Votación oculta para no influenciar.<br>¡Presiona «👁️ Mostrar barras» cuando acabe el tiempo!
+          </div>
+
+          <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px;">
+            <button class="mega-btn orange" style="padding: 12px 24px; font-size: 1.05rem;" onclick="goToDebate()">
+              🗣️ IR A DEBATE
+            </button>
+            <button class="mega-btn" style="padding: 12px 24px; font-size: 1.05rem;" onclick="triggerReveal()">
+              💥 REVELAR YA
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-debate">
+      <span class="badge-pill" id="debate-round-pill">🔥 RONDA 01 / 10</span>
+      <h2 class="hero-title" style="font-size: clamp(2rem, 4.2vw, 3.5rem); margin-top: 12px;">
+        🎤 ¡ES HORA DE DEFENDER TU RESPUESTA!
+      </h2>
+
+      <div class="paper-card" style="width: 100%; text-align: center; padding: 20px; margin-top: 8px;">
+        <span style="font-size: 1.4rem; font-weight: 900;" id="debate-quote">
+          «El café o una ducha fría quitan la borrachera».
+        </span>
+      </div>
+
+      <div class="debate-grid">
+        <div class="debate-card" style="background: #FFE8A3;">
+          <div style="font-size: 3.2rem; margin-bottom: 10px;">💭</div>
+          ¿Por qué elegiste esa respuesta?
+        </div>
+        <div class="debate-card" style="background: #FFD1DC;">
+          <div style="font-size: 3.2rem; margin-bottom: 10px;">🧠</div>
+          ¿Qué te hace pensar eso?
+        </div>
+        <div class="debate-card" style="background: #C7F2D4;">
+          <div style="font-size: 3.2rem; margin-bottom: 10px;">👀</div>
+          ¿Alguien tiene una opinión diferente?
+        </div>
+      </div>
+
+      <button class="mega-btn pulse-anim" onclick="triggerReveal()">
+        🔍 ¡DESCUBRAMOS LA VERDAD!
+      </button>
+    </section>
+
+    <section class="screen" id="screen-reveal">
+      <span class="badge-pill" id="reveal-round-pill">🔥 RONDA 01 / 10</span>
+
+      <div class="reveal-banner false-ans" id="reveal-answer-banner">
+        ❌ ¡FALSO!
+      </div>
+
+      <div class="explain-grid">
+        <div class="paper-card">
+          <h3 style="font-size: 1.55rem; font-weight: 900; color: var(--morado); margin-bottom: 10px;">
+            🧠 ¿POR QUÉ?
+          </h3>
+          <p id="reveal-why" style="font-size: 1.28rem; font-weight: 700; line-height: 1.5;">
+            Explicación científica...
+          </p>
+        </div>
+
+        <div class="paper-card" style="background: #FFF0C2;">
+          <h3 style="font-size: 1.55rem; font-weight: 900; color: #B85D19; margin-bottom: 10px;">
+            💡 ¿SABÍAS QUE...?
+          </h3>
+          <p id="reveal-fact" style="font-size: 1.22rem; font-weight: 700; line-height: 1.5;">
+            Dato curioso...
+          </p>
+        </div>
+      </div>
+
+      <button class="mega-btn green" id="next-mito-btn" onclick="nextQuestion()">
+        ➡️ ¡SIGUIENTE MITO!
+      </button>
+    </section>
+
+    <section class="screen" id="screen-final">
+      <div class="paper-card" style="text-align: center; max-width: 860px; width: 100%; padding: 44px 30px;">
+        <div style="font-size: 4.5rem; margin-bottom: 10px;">🏆🎉✨</div>
+        <h1 style="font-size: clamp(2.1rem, 4.5vw, 3.6rem); font-weight: 900; color: var(--morado); margin-bottom: 16px;">
+          🎉 ¡FELICIDADES, MITOS SUPERADOS!
+        </h1>
+        <p style="font-size: 1.65rem; font-weight: 900; color: var(--texto); margin-bottom: 10px;">
+          💜 INFORMARTE TAMBIÉN ES CUIDARTE.
+        </p>
+        <p style="font-size: 1.5rem; font-weight: 900; color: var(--naranja); margin-bottom: 22px;">
+          🎯 TÚ DECIDES, NO EL ALCOHOL.
+        </p>
+        <div class="badge-pill" style="font-size: 1.3rem; margin-bottom: 28px;">#RompeElMito</div>
+        <br>
+        <button class="mega-btn pulse-anim" onclick="restartWholeGame()">
+          🔄 ¡VOLVER A JUGAR!
+        </button>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-student">
+      <div class="student-shell">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="badge-pill">🎯 ROMPE EL MITO</span>
+          <span class="badge-pill" style="background: var(--crema);" id="student-round-badge">RONDA 01 / 10</span>
+        </div>
+
+        <div class="paper-card" style="padding: 22px; text-align: center;">
+          <div style="font-size: 3rem; margin-bottom: 6px;" id="st-q-emoji">☕</div>
+          <h2 style="font-size: 1.3rem; font-weight: 900; line-height: 1.3;" id="st-q-text">
+            Esperando que la presentadora inicie la ronda...
+          </h2>
+        </div>
+
+        <div id="student-buttons-area" style="display: flex; flex-direction: column; gap: 14px;">
+          <button class="vote-big-btn v" id="st-btn-V" onclick="castStudentVote('V')">
+            <span>🟢 VERDADERO</span>
+            <span>👍</span>
+          </button>
+          <button class="vote-big-btn f" id="st-btn-F" onclick="castStudentVote('F')">
+            <span>🔴 FALSO</span>
+            <span>❌</span>
+          </button>
+          <button class="vote-big-btn d" id="st-btn-D" onclick="castStudentVote('D')">
+            <span>🟡 DEPENDE</span>
+            <span>🤔</span>
+          </button>
+        </div>
+
+        <div class="paper-card" id="student-feedback-box" style="display:none; text-align:center; padding: 20px; background: #E9F9EE;">
+          <h3 style="font-size: 1.35rem; font-weight: 900;" id="st-feedback-title">✅ ¡Voto registrado!</h3>
+          <p style="font-weight: 700; margin-top: 6px;" id="st-feedback-sub">
+            Mira la pantalla principal para ver los resultados del salón.
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="host-modal">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 1.6rem; font-weight: 900;">🎛️ PANEL SECRETO DE LA PRESENTADORA</h2>
+        <button class="ctrl-btn" onclick="closeModal('host-modal')">✖ Cerrar</button>
+      </div>
+
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
+        <button class="ctrl-btn" onclick="startTimer(); closeModal('host-modal')">▶️ Iniciar Tiempo</button>
+        <button class="ctrl-btn" onclick="pauseTimer()">⏸️ Pausar Tiempo</button>
+        <button class="ctrl-btn" onclick="resetTimer()">🔄 Reiniciar Tiempo</button>
+        <button class="ctrl-btn" style="background: var(--amarillo);" onclick="closeModal('host-modal'); triggerReveal()">💥 Revelar Respuesta</button>
+        <button class="ctrl-btn" onclick="prevQuestion(); closeModal('host-modal')">⬅️ Anterior</button>
+        <button class="ctrl-btn" onclick="nextQuestion(); closeModal('host-modal')">➡️ Siguiente</button>
+        <button class="ctrl-btn" style="background: #D6F5E3;" onclick="simulateVotes()">🧪 Simular votos</button>
+        <button class="ctrl-btn" style="background: #FFD6DF;" onclick="clearRoundVotes()">🗑️ Limpiar votos ronda</button>
+        <button class="ctrl-btn" style="background: var(--naranja);" onclick="closeModal('host-modal'); goToScreen('screen-final'); launchConfetti(140);">🏁 Finalizar Actividad</button>
+        <button class="ctrl-btn" onclick="closeModal('host-modal'); restartWholeGame()">🔁 Reiniciar Todo</button>
+      </div>
+
+      <h3 style="font-weight: 900; margin-bottom: 10px;">📋 Listado de las 10 Preguntas (Salto rápido):</h3>
+      <div id="host-questions-list"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="firebase-modal">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2 style="font-size: 1.5rem; font-weight: 900;">🔥 Conectar Votación en Tiempo Real (Firebase)</h2>
+        <button class="ctrl-btn" onclick="closeModal('firebase-modal')">✖ Cerrar</button>
+      </div>
+      <p style="font-weight: 700; font-size: 0.95rem; margin-bottom: 12px; color: #4A3267;">
+        Pega aquí la URL de tu <b>Firebase Realtime Database</b> (por ejemplo: <code>https://rompe-el-mito-default-rtdb.firebaseio.com</code>) para que los celulares de tus estudiantes envíen votos en vivo a tu pantalla.
+      </p>
+      <label style="font-weight: 800;">Database URL de Firebase:</label>
+      <input type="text" class="input-field" id="fb-url-input" placeholder="https://tu-proyecto-default-rtdb.firebaseio.com" />
+
+      <label style="font-weight: 800;">Código de Sala (por si haces varios grupos):</label>
+      <input type="text" class="input-field" id="fb-room-input" value="sala-universidad-1" />
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button class="ctrl-btn" onclick="disconnectFirebase()">Usar Modo Local</button>
+        <button class="mega-btn green" style="padding: 12px 24px; font-size: 1rem;" onclick="saveFirebaseConfig()">💾 GUARDAR Y CONECTAR</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_FIREBASE_DB_URL = "";
+    const DEFAULT_ROOM_ID = "sala-universidad-1";
+
+    const QUESTIONS = [
+      {
+        round: 1,
+        emoji: "☕",
+        statement: "«El café o una ducha fría quitan la borrachera».",
+        answer: "FALSO",
+        why: "El café contiene cafeína, un estimulante que puede hacer que una persona se sienta más despierta o alerta, pero no acelera la eliminación del alcohol en la sangre. Solo el hígado, con el paso del tiempo, metaboliza el alcohol.",
+        fact: "Una ducha fría tampoco reduce el nivel de alcohol en el organismo; de hecho, el cambio brusco de temperatura puede provocar un choque térmico o mareos si la persona está intoxicada."
+      },
+      {
+        round: 2,
+        emoji: "❄️",
+        statement: "«El alcohol ayuda a entrar en calor cuando hace frío».",
+        answer: "FALSO",
+        why: "El alcohol dilata los vasos sanguíneos cercanos a la piel, generando una sensación pasajera de calor superficial, pero en realidad hace que el cuerpo pierda calor interno más rápidamente.",
+        fact: "Beber alcohol en ambientes fríos aumenta el riesgo de hipotermia porque engaña al cuerpo haciéndole creer que tiene calor mientras su temperatura central desciende."
+      },
+      {
+        round: 3,
+        emoji: "🧍",
+        statement: "«Todas las personas reaccionan igual al consumir alcohol».",
+        answer: "FALSO",
+        why: "El efecto del alcohol varía según factores como el peso corporal, el sexo biológico, la velocidad de consumo, si se ha comido antes, la genética y el estado de salud o medicamentos.",
+        fact: "A igual cantidad de alcohol ingerida, dos personas pueden alcanzar concentraciones muy distintas de alcohol en la sangre y mostrar diferentes niveles de afectación."
+      },
+      {
+        round: 4,
+        emoji: "🍺",
+        statement: "«La cerveza hace menos daño porque tiene menos alcohol que otras bebidas».",
+        answer: "FALSO",
+        why: "Lo que afecta al organismo es la cantidad total de alcohol puro consumido, no el tipo de bebida. Una lata estándar de cerveza contiene aproximadamente la misma cantidad de alcohol puro que una copa de vino o un trago corto de destilado.",
+        fact: "Beber varias cervezas seguidas puede aportar tanta o más cantidad de alcohol puro que otras bebidas consideradas más fuertes."
+      },
+      {
+        round: 5,
+        emoji: "🚶",
+        statement: "«Una persona puede estar afectada por el alcohol aunque todavía pueda caminar y hablar».",
+        answer: "VERDADERO",
+        why: "El alcohol comienza a afectar el juicio, los reflejos, la atención y la coordinación motora mucho antes de que aparezcan signos evidentes como balbucear o perder el equilibrio.",
+        fact: "Por esta razón, conducir o tomar decisiones riesgosas después de beber es peligroso incluso cuando la persona siente que está «controlando» perfectamente."
+      },
+      {
+        round: 6,
+        emoji: "🥂",
+        statement: "«Mezclar bebidas alcohólicas de diferentes tipos siempre produce una intoxicación más rápida».",
+        answer: "FALSO",
+        why: "El grado de intoxicación depende de la cantidad total de alcohol puro ingerido y de la rapidez con la que se bebe, no de combinar fermentados con destilados.",
+        fact: "Mezclar bebidas suele llevar a beber más rápido o a perder la cuenta de cuánto alcohol se ha tomado, además de que los distintos aditivos y azúcares pueden empeorar el malestar estomacal."
+      },
+      {
+        round: 7,
+        emoji: "🧠",
+        statement: "«El alcohol puede afectar la memoria y la concentración».",
+        answer: "VERDADERO",
+        why: "El alcohol interfiere con la comunicación entre las neuronas y afecta especialmente al hipocampo, la región del cerebro encargada de formar nuevos recuerdos, además de reducir la capacidad de atención.",
+        fact: "Cuando se consume una gran cantidad de alcohol en poco tiempo pueden ocurrir las llamadas «lagunas mentales» (blackouts), donde el cerebro deja de registrar temporalmente lo que sucede."
+      },
+      {
+        round: 8,
+        emoji: "😴",
+        statement: "«Dormir unas horas después de beber garantiza que una persona ya está sobria».",
+        answer: "FALSO",
+        why: "Mientras dormimos el hígado sigue procesando el alcohol a un ritmo lento y constante. Si se bebió en exceso, al despertar unas horas después todavía puede haber alcohol circulando en la sangre.",
+        fact: "Además, el alcohol fragmenta las fases profundas del sueño, por lo que dormir después de beber no proporciona un descanso verdaderamente reparador."
+      },
+      {
+        round: 9,
+        emoji: "📚",
+        statement: "«El consumo de alcohol puede afectar el rendimiento académico».",
+        answer: "VERDADERO",
+        why: "El consumo de alcohol altera la calidad del sueño, disminuye la concentración, perjudica la consolidación de la memoria y aumenta el ausentismo o el retraso en entregas y exámenes.",
+        fact: "Incluso un episodio aislado de consumo excesivo el fin de semana puede afectar la atención y el aprendizaje durante los días siguientes."
+      },
+      {
+        round: 10,
+        emoji: "🎉",
+        statement: "«Es posible divertirse y compartir con amigos sin consumir alcohol».",
+        answer: "VERDADERO",
+        why: "La diversión, la conexión social y el sentido de pertenencia nacen de las personas, la música, el humor y las experiencias compartidas, no de una sustancia.",
+        fact: "Cada vez más estudiantes universitarios eligen disfrutar fiestas, conciertos y reuniones sin alcohol, recordando cada momento y cuidando su bienestar."
+      }
+    ];
+
+    let role = null;
+    let currentIdx = 0;
+    let currentScreenId = 'screen-role';
+    let timerSeconds = 10;
+    let timerInterval = null;
+    let isTimerRunning = false;
+    let barsHidden = false;
+    let isMuted = false;
+
+    let votesStore = {};
+    let myVoterId = localStorage.getItem('rompe_mito_voter_id');
+    if (!myVoterId) {
+      myVoterId = 'u_' + Math.random().toString(36).substring(2, 10);
+      localStorage.setItem('rompe_mito_voter_id', myVoterId);
+    }
+
+    let db = null;
+    let roomRef = null;
+    let fbUrl = localStorage.getItem('rompe_mito_fb_url') || DEFAULT_FIREBASE_DB_URL;
+    let fbRoom = localStorage.getItem('rompe_mito_fb_room') || DEFAULT_ROOM_ID;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initBackgroundDecor();
+      renderHostQuestionsList();
+
+      const params = new URLSearchParams(window.location.search);
+      const linkDb = params.get('db');
+      const linkRoom = params.get('room');
+      if (linkDb) {
+        fbUrl = linkDb;
+        fbRoom = linkRoom || DEFAULT_ROOM_ID;
+      }
+
+      if (fbUrl) {
+        initFirebase(fbUrl, fbRoom);
+      }
+
+      if (params.get('play') === '1') {
+        selectRole('student');
+      }
+    });
+
+    function initBackgroundDecor() {
+      const container = document.getElementById('bg-shapes');
+      const emojis = ['⭐', '❓', '✨', '🎯', '⚡', '🎉', '💡', '🔥'];
+      for (let i = 0; i < 18; i++) {
+        const el = document.createElement('div');
+        el.className = 'floating-emoji';
+        el.textContent = emojis[i % emojis.length];
+        el.style.left = Math.random() * 94 + '%';
+        el.style.top = Math.random() * 90 + '%';
+        el.style.animationDelay = (Math.random() * 6) + 's';
+        el.style.animationDuration = (7 + Math.random() * 6) + 's';
+        container.appendChild(el);
+      }
+    }
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playTone(freq, type = 'sine', duration = 0.15, vol = 0.18) {
+      if (isMuted) return;
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function playFanfare() {
+      playTone(523.25, 'triangle', 0.18);
+      setTimeout(() => playTone(659.25, 'triangle', 0.18), 120);
+      setTimeout(() => playTone(783.99, 'triangle', 0.35), 240);
+    }
+
+    function playAlarm() {
+      playTone(220, 'sawtooth', 0.25, 0.25);
+      setTimeout(() => playTone(185, 'sawtooth', 0.4, 0.25), 180);
+    }
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      document.getElementById('mute-btn').textContent = isMuted ? '🔇' : '🔊';
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    function selectRole(selected) {
+      role = selected;
+      if (role === 'host') {
+        document.getElementById('host-panel-btn').style.display = 'flex';
+        generateStudentQR();
+        goToScreen('screen-welcome');
+        syncHostStateToFirebase('screen-welcome', currentIdx, false);
+      } else {
+        document.getElementById('host-panel-btn').style.display = 'none';
+        goToScreen('screen-student');
+        updateStudentUI();
+      }
+    }
+
+    function goToScreen(screenId) {
+      currentScreenId = screenId;
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById(screenId);
+      if (target) target.classList.add('active');
+    }
+
+    function getStudentShareUrl() {
+      const base = window.location.href.split('?')[0].split('#')[0];
+      let url = base + '?play=1';
+      if (fbUrl) {
+        url += '&db=' + encodeURIComponent(fbUrl) + '&room=' + encodeURIComponent(fbRoom);
+      }
+      return url;
+    }
+
+    function generateStudentQR() {
+      const qrEl = document.getElementById('qrcode');
+      qrEl.innerHTML = '';
+      const url = getStudentShareUrl();
+      if (window.QRCode) {
+        new QRCode(qrEl, {
+          text: url,
+          width: 145,
+          height: 145,
+          colorDark: "#2D1A42",
+          colorLight: "#FFFFFF"
+        });
+      }
+    }
+
+    function copyStudentLink() {
+      const url = getStudentShareUrl();
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = document.getElementById('copy-link-btn');
+        btn.textContent = '✅ ¡LINK COPIADO!';
+        setTimeout(() => { btn.textContent = '📋 COPIAR LINK PARA ALUMNOS'; }, 2500);
+      });
+    }
+
+    function startContest() {
+      currentIdx = 0;
+      loadQuestion(currentIdx);
+    }
+
+    function loadQuestion(idx) {
+      currentIdx = idx;
+      const q = QUESTIONS[currentIdx];
+      const roundStr = String(q.round).padStart(2, '0');
+
+      document.getElementById('round-indicator').textContent = `🔥 RONDA ${roundStr} / 10`;
+      document.getElementById('q-emoji').textContent = q.emoji;
+      document.getElementById('q-text').textContent = q.statement;
+
+      const card = document.getElementById('question-card');
+      card.style.animation = 'none';
+      card.offsetHeight;
+      card.style.animation = 'cardFlipIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+      resetTimer();
+      updateVotesChart();
+      goToScreen('screen-contest');
+      playTone(440, 'triangle', 0.15);
+      syncHostStateToFirebase('screen-contest', currentIdx, false);
+    }
+
+    function startTimer() {
+      if (isTimerRunning) return;
+      if (timerSeconds <= 0) timerSeconds = 10;
+      isTimerRunning = true;
+      document.getElementById('time-up-banner').style.display = 'none';
+
+      timerInterval = setInterval(() => {
+        timerSeconds--;
+        updateTimerVisual();
+        if (timerSeconds > 0) {
+          playTone(timerSeconds <= 3 ? 660 : 480, 'sine', 0.08, 0.12);
+        } else {
+          pauseTimer();
+          onTimeUp();
+        }
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      isTimerRunning = false;
+      clearInterval(timerInterval);
+    }
+
+    function resetTimer() {
+      pauseTimer();
+      timerSeconds = 10;
+      document.getElementById('time-up-banner').style.display = 'none';
+      updateTimerVisual();
+    }
+
+    function updateTimerVisual() {
+      const numEl = document.getElementById('timer-number');
+      const circle = document.getElementById('timer-circle');
+      numEl.textContent = timerSeconds;
+
+      const circumference = 408;
+      const offset = circumference - (timerSeconds / 10) * circumference;
+      circle.style.strokeDashoffset = offset;
+
+      if (timerSeconds > 5) {
+        circle.style.stroke = 'var(--verde-vivo)';
+      } else if (timerSeconds > 2) {
+        circle.style.stroke = 'var(--amarillo)';
+      } else {
+        circle.style.stroke = 'var(--rojo-vivo)';
+      }
+    }
+
+    function onTimeUp() {
+      document.getElementById('time-up-banner').style.display = 'block';
+      playAlarm();
+      launchConfetti(45);
+    }
+
+    function toggleBarsVisibility() {
+      barsHidden = !barsHidden;
+      const bars = document.getElementById('bars-container');
+      const hiddenBox = document.getElementById('bars-hidden-overlay');
+      const btn = document.getElementById('toggle-bars-btn');
+      if (barsHidden) {
+        bars.style.display = 'none';
+        hiddenBox.style.display = 'block';
+        btn.textContent = '👁️ Mostrar barras';
+      } else {
+        bars.style.display = 'grid';
+        hiddenBox.style.display = 'none';
+        btn.textContent = '🙈 Ocultar barras';
+      }
+    }
+
+    function goToDebate() {
+      pauseTimer();
+      const q = QUESTIONS[currentIdx];
+      const roundStr = String(q.round).padStart(2, '0');
+      document.getElementById('debate-round-pill').textContent = `🔥 RONDA ${roundStr} / 10`;
+      document.getElementById('debate-quote').textContent = q.statement;
+      goToScreen('screen-debate');
+      syncHostStateToFirebase('screen-debate', currentIdx, false);
+    }
+
+    function triggerReveal() {
+      pauseTimer();
+      const overlay = document.getElementById('suspense-overlay');
+      overlay.style.display = 'flex';
+      playTone(260, 'triangle', 0.4, 0.2);
+
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        showRevealContent();
+      }, 1300);
+    }
+
+    function showRevealContent() {
+      const q = QUESTIONS[currentIdx];
+      const roundStr = String(q.round).padStart(2, '0');
+      document.getElementById('reveal-round-pill').textContent = `🔥 RONDA ${roundStr} / 10`;
+
+      const banner = document.getElementById('reveal-answer-banner');
+      if (q.answer === 'VERDADERO') {
+        banner.className = 'reveal-banner true-ans';
+        banner.textContent = '✅ ¡VERDADERO!';
+      } else {
+        banner.className = 'reveal-banner false-ans';
+        banner.textContent = '❌ ¡FALSO!';
+      }
+
+      document.getElementById('reveal-why').textContent = q.why;
+      document.getElementById('reveal-fact').textContent = q.fact;
+
+      const nextBtn = document.getElementById('next-mito-btn');
+      nextBtn.textContent = currentIdx === QUESTIONS.length - 1 ? '🏆 ¡VER RESULTADO FINAL!' : '➡️ ¡SIGUIENTE MITO!';
+
+      goToScreen('screen-reveal');
+      playFanfare();
+      launchConfetti(110);
+      syncHostStateToFirebase('screen-reveal', currentIdx, true);
+    }
+
+    function nextQuestion() {
+      if (currentIdx < QUESTIONS.length - 1) {
+        loadQuestion(currentIdx + 1);
+      } else {
+        goToScreen('screen-final');
+        playFanfare();
+        launchConfetti(180);
+        syncHostStateToFirebase('screen-final', currentIdx, true);
+      }
+    }
+
+    function prevQuestion() {
+      if (currentIdx > 0) {
+        loadQuestion(currentIdx - 1);
+      }
+    }
+
+    function restartWholeGame() {
+      votesStore = {};
+      if (roomRef) {
+        roomRef.child('votes').remove();
+      }
+      currentIdx = 0;
+      goToScreen('screen-welcome');
+      syncHostStateToFirebase('screen-welcome', 0, false);
+    }
+
+    function castStudentVote(choice) {
+      playTone(580, 'triangle', 0.14);
+      if (!votesStore[currentIdx]) votesStore[currentIdx] = {};
+      votesStore[currentIdx][myVoterId] = choice;
+
+      if (roomRef) {
+        roomRef.child(`votes/r_${currentIdx}/${myVoterId}`).set(choice);
+      }
+      updateStudentUI();
+      updateVotesChart();
+    }
+
+    function updateStudentUI() {
+      const q = QUESTIONS[currentIdx];
+      const roundStr = String(q.round).padStart(2, '0');
+      document.getElementById('student-round-badge').textContent = `RONDA ${roundStr} / 10`;
+      document.getElementById('st-q-emoji').textContent = q.emoji;
+      document.getElementById('st-q-text').textContent = q.statement;
+
+      const roundVotes = votesStore[currentIdx] || {};
+      const myChoice = roundVotes[myVoterId] || null;
+
+      ['V', 'F', 'D'].forEach(k => {
+        const btn = document.getElementById('st-btn-' + k);
+        btn.classList.toggle('selected', myChoice === k);
+      });
+
+      const fbBox = document.getElementById('student-feedback-box');
+      if (myChoice) {
+        const names = { V: '🟢 VERDADERO', F: '🔴 FALSO', D: '🟡 DEPENDE' };
+        fbBox.style.display = 'block';
+        document.getElementById('st-feedback-title').textContent = `✅ Elegiste: ${names[myChoice]}`;
+      } else {
+        fbBox.style.display = 'none';
+      }
+    }
+
+    function updateVotesChart() {
+      const roundVotes = votesStore[currentIdx] || {};
+      const values = Object.values(roundVotes);
+      const total = values.length;
+      const cV = values.filter(v => v === 'V').length;
+      const cF = values.filter(v => v === 'F').length;
+      const cD = values.filter(v => v === 'D').length;
+
+      const pV = total ? Math.round((cV / total) * 100) : 0;
+      const pF = total ? Math.round((cF / total) * 100) : 0;
+      const pD = total ? Math.round((cD / total) * 100) : 0;
+
+      document.getElementById('total-votes-badge').textContent = `👥 ${total} VOTOS`;
+      document.getElementById('count-V').textContent = `${cV} (${pV}%)`;
+      document.getElementById('count-F').textContent = `${cF} (${pF}%)`;
+      document.getElementById('count-D').textContent = `${cD} (${pD}%)`;
+
+      document.getElementById('bar-V').style.height = Math.max(14, (pV / 100) * 130) + 'px';
+      document.getElementById('bar-F').style.height = Math.max(14, (pF / 100) * 130) + 'px';
+      document.getElementById('bar-D').style.height = Math.max(14, (pD / 100) * 130) + 'px';
+    }
+
+    function simulateVotes() {
+      if (!votesStore[currentIdx]) votesStore[currentIdx] = {};
+      const opts = ['V', 'F', 'D'];
+      for (let i = 0; i < 12; i++) {
+        const fakeId = 'sim_' + Math.random().toString(36).substring(2, 7);
+        const pick = opts[Math.floor(Math.random() * opts.length)];
+        votesStore[currentIdx][fakeId] = pick;
+        if (roomRef) {
+          roomRef.child(`votes/r_${currentIdx}/${fakeId}`).set(pick);
+        }
+      }
+      updateVotesChart();
+      playTone(620, 'sine', 0.12);
+    }
+
+    function clearRoundVotes() {
+      votesStore[currentIdx] = {};
+      if (roomRef) {
+        roomRef.child(`votes/r_${currentIdx}`).remove();
+      }
+      updateVotesChart();
+    }
+
+    function openFirebaseModal() {
+      document.getElementById('fb-url-input').value = fbUrl || '';
+      document.getElementById('fb-room-input').value = fbRoom || DEFAULT_ROOM_ID;
+      document.getElementById('firebase-modal').classList.add('open');
+    }
+
+    function saveFirebaseConfig() {
+      const url = document.getElementById('fb-url-input').value.trim().replace(/\/$/, '');
+      const room = document.getElementById('fb-room-input').value.trim() || DEFAULT_ROOM_ID;
+      if (!url.startsWith('https://')) {
+        alert('Por favor ingresa una URL válida de Firebase Realtime Database que empiece con https://');
+        return;
+      }
+      localStorage.setItem('rompe_mito_fb_url', url);
+      localStorage.setItem('rompe_mito_fb_room', room);
+      fbUrl = url;
+      fbRoom = room;
+      initFirebase(url, room);
+      if (role === 'host') generateStudentQR();
+      closeModal('firebase-modal');
+    }
+
+    function disconnectFirebase() {
+      localStorage.removeItem('rompe_mito_fb_url');
+      fbUrl = '';
+      roomRef = null;
+      document.getElementById('conn-dot').classList.remove('online');
+      document.getElementById('conn-text').textContent = 'Modo Local';
+      closeModal('firebase-modal');
+    }
+
+    function initFirebase(databaseURL, roomName) {
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp({ databaseURL });
+        }
+        db = firebase.database();
+        roomRef = db.ref('rompe_el_mito/' + roomName);
+
+        db.ref('.info/connected').on('value', (snap) => {
+          const online = snap.val() === true;
+          document.getElementById('conn-dot').classList.toggle('online', online);
+          document.getElementById('conn-text').textContent = online ? 'En Vivo (Firebase)' : 'Conectando...';
+        });
+
+        roomRef.child('votes').on('value', (snap) => {
+          const data = snap.val() || {};
+          QUESTIONS.forEach((_, idx) => {
+            votesStore[idx] = data['r_' + idx] || {};
+          });
+          updateVotesChart();
+          if (role === 'student') updateStudentUI();
+        });
+
+        roomRef.child('state').on('value', (snap) => {
+          const st = snap.val();
+          if (st && role === 'student') {
+            if (typeof st.currentIdx === 'number' && st.currentIdx !== currentIdx) {
+              currentIdx = st.currentIdx;
+              updateStudentUI();
+            }
+          }
+        });
+      } catch (err) {
+        console.error('Error Firebase:', err);
+        document.getElementById('conn-text').textContent = 'Error Firebase';
+      }
+    }
+
+    function syncHostStateToFirebase(screen, idx, revealed) {
+      if (role === 'host' && roomRef) {
+        roomRef.child('state').set({
+          screen,
+          currentIdx: idx,
+          revealed,
+          updatedAt: Date.now()
+        });
+      }
+    }
+
+    function openHostPanel() {
+      renderHostQuestionsList();
+      document.getElementById('host-modal').classList.add('open');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    function renderHostQuestionsList() {
+      const container = document.getElementById('host-questions-list');
+      container.innerHTML = '';
+      QUESTIONS.forEach((q, idx) => {
+        const div = document.createElement('div');
+        div.className = 'q-list-item';
+        const badgeColor = q.answer === 'VERDADERO' ? '#8FD1A4' : '#FFB8C6';
+        div.innerHTML = `
+          <span><b>#${q.round}</b> ${q.emoji} ${q.statement}</span>
+          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+            <span style="background:${badgeColor}; padding:3px 10px; border-radius:20px; border:2px solid #2D1A42; font-size:0.8rem;">
+              ${q.answer}
+            </span>
+            <button class="ctrl-btn" style="padding:4px 10px;" onclick="loadQuestion(${idx}); closeModal('host-modal')">Ir</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (role !== 'host') return;
+      if (e.target.tagName === 'INPUT') return;
+      if (e.key.toLowerCase() === 'p') {
+        const modal = document.getElementById('host-modal');
+        modal.classList.contains('open') ? closeModal('host-modal') : openHostPanel();
+      }
+    });
+
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function launchConfetti(count = 80) {
+      const colors = ['#F6C453', '#EE8952', '#76B58A', '#F4A6B8', '#A98ACB', '#FFFFFF'];
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: canvas.width / 2 + (Math.random() - 0.5) * 260,
+          y: canvas.height / 2 + (Math.random() - 0.5) * 120,
+          vx: (Math.random() - 0.5) * 18,
+          vy: (Math.random() - 0.85) * 18,
+          size: 8 + Math.random() * 10,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rot: Math.random() * 360,
+          vRot: (Math.random() - 0.5) * 12,
+          life: 100 + Math.random() * 50
+        });
+      }
+    }
+
+    function animateConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.35;
+        p.rot += p.vRot;
+        p.life--;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rot * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.65);
+        ctx.restore();
+      });
+      particles = particles.filter(p => p.life > 0);
+      requestAnimationFrame(animateConfetti);
+    }
+    animateConfetti();
+  </script>
+</body>
+</html>
